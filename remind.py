@@ -20,9 +20,7 @@ class Remind(BotPlugin):
         )
 
     def send_reminders(self):
-        try:
-            test = self['REMINDER_IDS'][0]
-        except KeyError:
+        if 'REMINDER_IDS' not in self:
             self['REMINDER_IDS'] = []
 
         for reminderKey in self['REMINDER_IDS']:
