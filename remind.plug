@@ -1,0 +1,9 @@
+[Core]
+Name = remind
+Module = remind
+
+[Python]
+Version = 2+
+
+[Documentation]
+Description = Simple reminders plugin
