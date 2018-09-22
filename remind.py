@@ -20,24 +20,27 @@ class Remind(BotPlugin):
         )
 
     def send_reminders(self):
-        for reminderKey in self['REMINDER_IDS']:
-            reminder = self[reminderKey]
-            if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
-                message_type = 'chat' if reminder['is_user'] else 'groupchat'
-                self.send(
-                    reminder['target'],
-                    "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
-                                                                            message=reminder['message']),
-                )
-                reminder['sent'] = True
-            elif reminder['sent'] is True:
-                oldKeys = self['REMINDER_IDS']
-                oldKeys.remove(reminder["id"])
-                self['REMINDER_IDS'] = oldKeys
+        try:
+            for reminderKey in self['REMINDER_IDS']:
+                reminder = self[reminderKey]
+                if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
+                    message_type = 'chat' if reminder['is_user'] else 'groupchat'
+                    self.send(
+                        reminder['target'],
+                        "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
+                                                                                message=reminder['message']),
+                    )
+                    reminder['sent'] = True
+                elif reminder['sent'] is True:
+                    oldKeys = self['REMINDER_IDS']
+                    oldKeys.remove(reminder["id"])
+                    self['REMINDER_IDS'] = oldKeys
 
-                del self[reminderKey]
+                    del self[reminderKey]
 
-            self[reminderKey] = reminder
+                self[reminderKey] = reminder
+        except:
+                self['REMINDER_IDS'] = []
 
 
     @botcmd
