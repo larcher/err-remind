@@ -11,6 +11,12 @@ DEFAULT_LOCALE = 'en_CA' # CHANGE THIS TO YOUR LOCALE
 class Remind(BotPlugin):
     """Reminded plugin for errbot"""
 
+ #   def add_reminder(self, date, message, target, is_user):
+
+    @botcmd
+    def read(self, msg, args):
+        return self["REMINDER_IDS"]
+
     @botcmd
     def remind(self, msg, args):
         """save a new reminder. Usage: !remind <date/time> -> <thing>"""
@@ -30,5 +36,24 @@ class Remind(BotPlugin):
         message = args[date_end + 1:]
         is_user = msg.is_direct
         target = msg.frm
-#            self.add_reminder(date, message, target, is_user)
+#         self.add_reminder(date, message, target, is_user)
+
+        reminder = {
+            "id": uuid.uuid4().hex,
+            "date": date,
+            "message": message,
+            "target": target,
+            "is_user": is_user,
+            "sent": False
+        }
+
+        self[reminder["id"]] = reminder
+
+        try:
+            oldKeys = self['REMINDER_IDS']
+            oldKeys.append(reminder["id"])
+            self['REMINDER_IDS'] = oldKeys
+        except KeyError:
+            self['REMINDER_IDS'] = [reminder["id"]]
+
         return "Reminder set to \"{message}\" at {date}.".format(message=message, date=date)
