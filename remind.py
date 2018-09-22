@@ -21,26 +21,28 @@ class Remind(BotPlugin):
 
     def send_reminders(self):
         try:
-            for reminderKey in self['REMINDER_IDS']:
-                reminder = self[reminderKey]
-                if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
-                    message_type = 'chat' if reminder['is_user'] else 'groupchat'
-                    self.send(
-                        reminder['target'],
-                        "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
-                                                                                message=reminder['message']),
-                    )
-                    reminder['sent'] = True
-                elif reminder['sent'] is True:
-                    oldKeys = self['REMINDER_IDS']
-                    oldKeys.remove(reminder["id"])
-                    self['REMINDER_IDS'] = oldKeys
+            test = self['REMINDER_IDS'][0]
+        except KeyError:
+            self['REMINDER_IDS'] = []
 
-                    del self[reminderKey]
+        for reminderKey in self['REMINDER_IDS']:
+            reminder = self[reminderKey]
+            if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
+                message_type = 'chat' if reminder['is_user'] else 'groupchat'
+                self.send(
+                    reminder['target'],
+                    "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
+                                                                            message=reminder['message']),
+                )
+                reminder['sent'] = True
+            elif reminder['sent'] is True:
+                oldKeys = self['REMINDER_IDS']
+                oldKeys.remove(reminder["id"])
+                self['REMINDER_IDS'] = oldKeys
 
-                self[reminderKey] = reminder
-        except:
-                self['REMINDER_IDS'] = []
+                del self[reminderKey]
+
+            self[reminderKey] = reminder
 
 
     @botcmd
