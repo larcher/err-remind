@@ -9,13 +9,58 @@ DEFAULT_POLL_INTERVAL = 60 * 1  # one minute
 DEFAULT_LOCALE = 'en_CA' # CHANGE THIS TO YOUR LOCALE
 
 class Remind(BotPlugin):
-    """Reminded plugin for errbot"""
+    """Reminder plugin for errbot"""
 
- #   def add_reminder(self, date, message, target, is_user):
+    def activate(self):
+        super(Remind, self).activate()
+        self.send_reminders()
+        self.start_poller(
+            self.config['POLL_INTERVAL'] if self.config else DEFAULT_POLL_INTERVAL,
+            self.send_reminders
+        )
+
+    def send_reminders(self):
+        for reminderKey in self['REMINDER_IDS']:
+            reminder = self[reminderKey]
+            if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
+                message_type = 'chat' if reminder['is_user'] else 'groupchat'
+                self.send(
+                    reminder['target'],
+                    "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
+                                                                            message=reminder['message']),
+                )
+                reminder['sent'] = True
+            elif reminder['sent'] is True:
+                oldKeys = self['REMINDER_IDS']
+                oldKeys.remove(reminder["id"])
+                self['REMINDER_IDS'] = oldKeys
+
+                del self[reminderKey]
+
+            self[reminderKey] = reminder
+
 
     @botcmd
-    def read(self, msg, args):
-        return self["REMINDER_IDS"]
+    def readIds(self, msg, args):
+        """Mostly for debugging"""
+        if msg.frm not in self.bot_config.BOT_ADMINS:
+            return "You are not admin"
+
+        return self['REMINDER_IDS']
+
+    @botcmd
+    def resetremind(self, msg, args):
+        """Delete all reminders"""
+
+        if msg.frm not in self.bot_config.BOT_ADMINS:
+            return "You are not admin"
+
+        try:
+            for reminderKey in self['REMINDER_IDS']:
+                del self[reminderKey]
+            self["REMINDER_IDS"] = []
+        except KeyError:
+            self["REMINDER_IDS"] = []
 
     @botcmd
     def remind(self, msg, args):
@@ -36,7 +81,6 @@ class Remind(BotPlugin):
         message = args[date_end + 1:]
         is_user = msg.is_direct
         target = msg.frm
-#         self.add_reminder(date, message, target, is_user)
 
         reminder = {
             "id": uuid.uuid4().hex,
