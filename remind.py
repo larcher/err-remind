@@ -65,6 +65,32 @@ class Remind(BotPlugin):
         except KeyError:
             self["REMINDER_IDS"] = []
 
+    def add_reminder(self, date, message, target, is_user=True):
+        reminder = {
+            "id": uuid.uuid4().hex,
+            "date": date,
+            "message": message,
+            "target": target,
+            "is_user": is_user,
+            "sent": False
+        }
+        self.store_reminder(reminder)
+        return reminder
+
+    def store_reminder(self, reminder):
+        self[reminder["id"]] = reminder
+
+        try:
+            oldKeys = self['REMINDER_IDS']
+            oldKeys.append(reminder["id"])
+            self['REMINDER_IDS'] = oldKeys
+        except KeyError:
+            self['REMINDER_IDS'] = [reminder["id"]]
+
+#        all_reminders = self.get('REMINDER_IDS', {})
+#        all_reminders[reminder['id']] = reminder
+#        self['REMINDER_IDS'] = all_reminders
+
     @botcmd
     def remind(self, msg, args):
         """save a new reminder. Usage: !remind <date/time> -> <thing>"""
@@ -85,22 +111,6 @@ class Remind(BotPlugin):
         is_user = msg.is_direct
         target = msg.frm
 
-        reminder = {
-            "id": uuid.uuid4().hex,
-            "date": date,
-            "message": message,
-            "target": target,
-            "is_user": is_user,
-            "sent": False
-        }
-
-        self[reminder["id"]] = reminder
-
-        try:
-            oldKeys = self['REMINDER_IDS']
-            oldKeys.append(reminder["id"])
-            self['REMINDER_IDS'] = oldKeys
-        except KeyError:
-            self['REMINDER_IDS'] = [reminder["id"]]
+        self.add_reminder(date, message, target, is_user)
 
         return "Reminder set to \"{message}\" at {date}.".format(message=message, date=date)
