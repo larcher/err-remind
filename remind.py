@@ -28,7 +28,7 @@ class Remind(BotPlugin):
             if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
                 message_type = 'chat' if reminder['is_user'] else 'groupchat'
                 self.send(
-                    reminder['target'],
+                    self.build_identifier(reminder['target']),
                     "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
                                                                             message=reminder['message']),
                 )
@@ -42,37 +42,14 @@ class Remind(BotPlugin):
 
             self[reminderKey] = reminder
 
-
-    @botcmd
-    def readIds(self, msg, args):
-        """Mostly for debugging"""
-        if msg.frm not in self.bot_config.BOT_ADMINS:
-            return "You are not admin"
-
-        return self['REMINDER_IDS']
-
-    @botcmd
-    def resetremind(self, msg, args):
-        """Delete all reminders"""
-
-        if msg.frm not in self.bot_config.BOT_ADMINS:
-            return "You are not admin"
-
-        try:
-            for reminderKey in self['REMINDER_IDS']:
-                del self[reminderKey]
-            self["REMINDER_IDS"] = []
-        except KeyError:
-            self["REMINDER_IDS"] = []
-
     def add_reminder(self, date, message, target, is_user=True):
         reminder = {
-            "id": uuid.uuid4().hex,
-            "date": date,
-            "message": message,
-            "target": target,
-            "is_user": is_user,
-            "sent": False
+            'id': uuid.uuid4().hex,
+            'date': date,
+            'message': message,
+            'target': str(target),
+            'is_user': is_user,
+            'sent': False
         }
         self.store_reminder(reminder)
         return reminder
@@ -86,10 +63,6 @@ class Remind(BotPlugin):
             self['REMINDER_IDS'] = oldKeys
         except KeyError:
             self['REMINDER_IDS'] = [reminder["id"]]
-
-#        all_reminders = self.get('REMINDER_IDS', {})
-#        all_reminders[reminder['id']] = reminder
-#        self['REMINDER_IDS'] = all_reminders
 
     @botcmd
     def remind(self, msg, args):
@@ -109,7 +82,11 @@ class Remind(BotPlugin):
         date = pytz.utc.localize(datetime(*(date_struct[0])[:6]))
         message = args[date_end + 1:]
         is_user = msg.is_direct
-        target = msg.frm
+        target = str(msg.frm)
+
+        if not is_user:
+            head, sep, tail = target.partition('/')
+            target = head
 
         self.add_reminder(date, message, target, is_user)
 
