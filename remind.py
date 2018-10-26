@@ -3,7 +3,7 @@ import uuid
 import pytz
 import parsedatetime
 from datetime import datetime
-from pytz import utc
+from pytz import utc 
 
 DEFAULT_POLL_INTERVAL = 60 * 1  # one minute
 DEFAULT_LOCALE = 'en_CA' # CHANGE THIS TO YOUR LOCALE
@@ -25,7 +25,7 @@ class Remind(BotPlugin):
 
         for reminderKey in self['REMINDER_IDS']:
             reminder = self[reminderKey]
-            if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
+            if (datetime.now(pytz.timezone('US/Pacific'))).replace(tzinfo=None) > reminder['date'].replace(tzinfo=None) and not reminder['sent']:
                 message_type = 'chat' if reminder['is_user'] else 'groupchat'
                 self.send(
                     self.build_identifier(reminder['target']),
@@ -71,15 +71,16 @@ class Remind(BotPlugin):
         if "->" not in args:
             return "Usage: !remind <date/time> -> <thing>. For example: !remind tomorrow 12:00 -> Lunch with the dudebros to be reminded to eat lunch with the dudebros at noon the next day."
 
+            # if (datetime.now()).astimezone(pytz.timezone('US/Pacific')) > reminder['date'] and not reminder['sent']:
         pdt = parsedatetime.Calendar(parsedatetime.Constants(self.config['LOCALE'] if self.config else DEFAULT_LOCALE))
         date_end = args.index('->')
         date_list = args[:date_end]
-        date_struct = pdt.parse(date_list, datetime.now().timetuple())
+        date_struct = pdt.parse(date_list, datetime.now().astimezone(pytz.timezone('US/Pacific')).timetuple())
 
         if date_struct[1] == 0:
             return "Your date seems malformed: {date}".format(date=date_string)
 
-        date = pytz.utc.localize(datetime(*(date_struct[0])[:6]))
+        date = (datetime(*(date_struct[0])[:6]))
         message = args[date_end + 1:]
         is_user = msg.is_direct
         target = str(msg.frm)
