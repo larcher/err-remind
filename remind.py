@@ -28,8 +28,8 @@ class Remind(BotPlugin):
             if (datetime.now(pytz.timezone('US/Pacific'))).replace(tzinfo=None) > reminder['date'].replace(tzinfo=None) and not reminder['sent']:
                 message_type = 'chat' if reminder['is_user'] else 'groupchat'
                 self.send(
-                    self.build_identifier(reminder['target']),
-                    "Hello {nick}, here is your reminder: {message}".format(nick=reminder['target'],
+                    reminder['target'],
+                    "Hello {nick}, here is your reminder: {message}".format(nick=str(reminder['target']),
                                                                             message=reminder['message']),
                 )
                 reminder['sent'] = True
@@ -47,7 +47,7 @@ class Remind(BotPlugin):
             'id': uuid.uuid4().hex,
             'date': date,
             'message': message,
-            'target': str(target),
+            'target': target,
             'is_user': is_user,
             'sent': False
         }
@@ -83,11 +83,7 @@ class Remind(BotPlugin):
         date = (datetime(*(date_struct[0])[:6]))
         message = args[date_end + 1:]
         is_user = msg.is_direct
-        target = str(msg.frm)
-
-        if not is_user:
-            head, sep, tail = target.partition('/')
-            target = head
+        target = msg.frm
 
         self.add_reminder(date, message, target, is_user)
 
